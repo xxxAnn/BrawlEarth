@@ -6,22 +6,21 @@ json = require 'BrawlEarth.json'
 
 Client = {};
 Client.__index = Client
---[[ Pointing __index Client then setting the metatable to {}
-so that added methods are indexed in the metatable and accessible
-through the getmetatable built-in
---]]
 setmetatable(Client, {})
 
+-- Local functions
 
--- Waits for a certain amount of seconds
 local function wait(seconds)
+	--[[
+	Waits for a certain amount of second
+	]]--
     local endTime = os.time() + seconds
     while os.time() < endTime do
     end
 end
 
+-- Public functions
 
--- Makes request to the API
 function Client:request(sub, method)
 	--[[
 	Makes a request to the API with the predefined token
@@ -45,9 +44,9 @@ function Client:request(sub, method)
 	resp = table.concat(resp)
 
 	if self.verbose == true then print("HTTP Code: " .. tostring(c)) end
-	if c ~= 200 then return "Error" end
+	if c ~= 200 then error("An HTTP error code was received" .. tostring(c)) end
 
-	return json.decode(resp).items
+	return json.decode(resp)
 end
 
 function Client:getBrawlers(options)
@@ -89,6 +88,87 @@ function Client:getBrawlers(options)
 	end
 
 	return brawlers
+end
+
+function Client:getPlayer(options)
+	--[[
+	Result table structure:
+	####
+	{
+	  "club": {
+		"tag": "string",
+		"name": "string"
+	  },
+	  "3vs3Victories": 0,
+	  "isQualifiedFromChampionshipChallenge": true,
+	  "icon": {
+		"id": 0
+	  },
+	  "tag": "string",
+	  "name": "string",
+	  "trophies": 0,
+	  "expLevel": 0,
+	  "expPoints": 0,
+	  "highestTrophies": 0,
+	  "powerPlayPoints": 0,
+	  "highestPowerPlayPoints": 0,
+	  "soloVictories": 0,
+	  "duoVictories": 0,
+	  "bestRoboRumbleTime": 0,
+	  "bestTimeAsBigBrawler": 0,
+	  "brawlers": [
+		{
+		  "starPowers": [
+			{
+			  "name": {},
+			  "id": 0
+			}
+		  ],
+		  "gadgets": [
+			{
+			  "name": {},
+			  "id": 0
+			}
+		  ],
+		  "id": 0,
+		  "rank": 0,
+		  "trophies": 0,
+		  "highestTrophies": 0,
+		  "power": 0,
+		  "name": {}
+		}
+	  ],
+	  "nameColor": "string"
+	}
+	####
+	Doesn't have to be wrapped in a pcall
+	playerTag is a required keyword argument
+	If the returnRaw option is passed as false, `view getBrawler to see the result for table.brawlers`
+	]]--
+
+	playerTag = options.playerTag or false
+	returnRaw = options.returnRaw or false
+
+	if playerTag == false then error("Player tag is a required argument that is missing") end
+
+	playerTag = '%23' .. playerTag
+	response = self:request('/v1/players/' .. playerTag)
+	
+	if returnRaw == true then return response end
+
+	brawlers = {}
+	for k, v in pairs(response.brawlers) do
+		table = {
+		['gadgets'] = v.gadgets, 
+		['starPowers'] = v.starPowers, 
+		['id'] = v.id
+		}
+		brawlers[v.name] = table
+	end
+
+	response.brawlers = brawlers
+
+	return response
 end
 
 function Client:new(token, verbose, obj)
