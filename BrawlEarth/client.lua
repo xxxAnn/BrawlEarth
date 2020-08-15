@@ -40,7 +40,6 @@ function Client:request(sub, method)
 	headers = self.headers,
 	sink = ltn12.sink.table(resp)
 	}
-
 	resp = table.concat(resp)
 
 	if self.verbose == true then print("HTTP Code: " .. tostring(c)) end
@@ -79,7 +78,7 @@ function Client:getBrawlers(options)
 
 	brawlers = {}
 	for k, v in pairs(resp) do
-		table = {
+		local table = {
 		['gadgets'] = v.gadgets, 
 		['starPowers'] = v.starPowers, 
 		['id'] = v.id
@@ -158,7 +157,7 @@ function Client:getPlayer(options)
 
 	brawlers = {}
 	for k, v in pairs(response.brawlers) do
-		table = {
+		local table = {
 		['gadgets'] = v.gadgets, 
 		['starPowers'] = v.starPowers, 
 		['id'] = v.id
@@ -167,6 +166,34 @@ function Client:getPlayer(options)
 	end
 
 	response.brawlers = brawlers
+
+	return response
+end
+
+function Client:getClub(options)
+	--[[
+	Returns a table with the following template:
+	{
+		"tag": "string",
+		"name": "string",
+		"description": "string",
+		"trophies": 0,
+		"requiredTrophies": 0,
+		"members": [
+		{
+			"tag": "string",
+			"name": "string",
+			"trophies": 0,
+			"role": "string",
+			"nameColor": "string"
+		}
+		],
+		"type": "string"
+	}
+	]]--
+	clubTag = string.gsub('%23' .. options.clubTag, '#', '')
+
+	response = self:request('/v1/clubs/' .. clubTag)
 
 	return response
 end
